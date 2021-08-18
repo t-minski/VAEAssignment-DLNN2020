@@ -110,60 +110,73 @@ Wo = np.random.uniform(-std, std, size=(input_size, hidden_size))
 Bo = np.random.uniform(-std, std, size=(input_size, 1))
 
 
-def forward(input):
+def forward(input, alpha):
+    # lol, I didn't use alpha
 
     # YOUR FORWARD PASS FROM HERE
+    # TODO: Implement forward pass
     batch_size = input.shape[-1]
 
     if input.ndim == 1:
         input = np.expand_dims(input, axis=1)
 
     # (1) linear
-    # H = W_i \times input + Bi
+    H = Wi @ input + Bi
 
     # (2) ReLU
-    # H = ReLU(H)
+    H = relu(H)
 
     # (3) h > mu
     # Estimate the means of the latent distributions
-    # mean = Wm \times H + Bm
+    mean = Wm @ H + Bm
 
     # (4) h > log var
     # Estimate the (diagonal) variances of the latent distributions
-    # logvar = Wv \times H + Bv
+    logvar = Wv @ H + Bv
 
     # (5) sample the random variable z from means and variances (refer to the "reparameterization trick" to do this)
+    # Sample the noise vector from a standard normal.
+    eps = np.random.normal(size=mean.shape)
+
+    # Construct the parameters from the logits of the network.
+    var = np.exp(logvar)
+    sigma = np.diag(var)
+
+    # Compute the code vector via the reparameterization trick.
+    z = mean + sigma @ eps
 
     # (6) decode z
-    # D = Wd \times z + Bd
+    D = Wd @ z + Bd
 
     # (7) relu
-    # D = ReLU(D)
+    D = relu(D)
 
     # (8) dec to output
-    # output = Wo \times D + Bo
+    output = Wo @ D + Bo
 
     # # (9) dec to p(x)
     # and (10) reconstruction loss function (same as the
+    # TODO: Understand and implement reconstruction loss
     if loss_function == 'bce':
-
-        # BCE Loss
+        p = sigmoid(output)
+        # WARNING: We don't understand the minus sign in front.
+        loss = -np.sum(np.multiply(input, np.log(p)) + np.multiply(1 - input, np.log(1 - p)))
 
     elif loss_function == 'mse':
-
-        # MSE Loss
+        p = output
+        loss = np.sum(0.5 * (p - input) ** 2)
 
     # variational loss with KL Divergence between P(z|x) and U(0, 1)
 
-    #kl_div_loss = - 0.5 * (1 + logvar - mean^2 - e^logvar)
+    kl_div_loss = - 0.5 * (1 + logvar - mean**2 - var)
 
     # your loss is the combination of
     #loss = rec_loss + kl_div_loss
 
     # Store the activations for the backward pass
-    # activations = ( ... )
+    activations = (1, 2, 3, 4, 5,6 , 7, 8, 9, 10)
 
-    return loss, kl_div_loss, activations
+    return loss, activations
 
 
 def decode(z):
@@ -195,7 +208,7 @@ def backward(input, activations, scale=True, alpha=1.0):
 
     eps, h, mean, logvar, z, dec, output, p, _, _ = activations
 
-    # Perform your BACKWARD PASS (similar to the auto-encoder code)
+    # TODO: Perform your BACKWARD PASS (similar to the auto-encoder code)
 
     # 1st Note:
     # When performing the BW Pass for mean and logvar, note that they should have 2 different terms
